@@ -55,9 +55,14 @@ func (g *GrpcClient) triggerConstantContract(ct *core.TriggerSmartContract) (*ap
 	return g.Client.TriggerConstantContract(ctx, ct)
 }
 
-// TriggerContract and return tx result
-func (g *GrpcClient) TriggerContract(from, contractAddress, method, jsonString string,
-	feeLimit, tAmount int64, tTokenID string, tTokenAmount int64) (*api.TransactionExtention, error) {
+// TriggerContractV2 and return tx result
+func (g *GrpcClient) TriggerContractV2(
+	from, contractAddress, method string,
+	params []abi.Param,
+	feeLimit, tAmount int64,
+	tTokenID string,
+	tTokenAmount int64,
+) (*api.TransactionExtention, error) {
 	fromDesc, err := address.Base58ToAddress(from)
 	if err != nil {
 		return nil, err
@@ -67,13 +72,7 @@ func (g *GrpcClient) TriggerContract(from, contractAddress, method, jsonString s
 	if err != nil {
 		return nil, err
 	}
-
-	param, err := abi.LoadFromJSON(jsonString)
-	if err != nil {
-		return nil, err
-	}
-
-	dataBytes, err := abi.Pack(method, param)
+	dataBytes, err := abi.Pack(method, params)
 	if err != nil {
 		return nil, err
 	}
@@ -95,6 +94,20 @@ func (g *GrpcClient) TriggerContract(from, contractAddress, method, jsonString s
 	}
 
 	return g.triggerContract(ct, feeLimit)
+}
+
+// TriggerContract and return tx result
+func (g *GrpcClient) TriggerContract(
+	from, contractAddress, method, jsonString string,
+	feeLimit, tAmount int64,
+	tTokenID string,
+	tTokenAmount int64,
+) (*api.TransactionExtention, error) {
+	param, err := abi.LoadFromJSON(jsonString)
+	if err != nil {
+		return nil, err
+	}
+	return g.TriggerContractV2(from, contractAddress, method, param, feeLimit, tAmount, tTokenID, tTokenAmount)
 }
 
 // triggerContract and return tx result
